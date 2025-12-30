@@ -1,148 +1,24 @@
+# file: bot.py
 from pyrogram import Client, filters
-from pyrogram.errors import FloodWait
-from pyrogram.types import InputMediaPhoto
-import asyncio
-import time
-import threading
-from http.server import HTTPServer, BaseHTTPRequestHandler
 
-# =======================
-# CONFIG (HARDCODED)
-# =======================
+# ===================== CONFIG =====================
 API_ID = 22134923
 API_HASH = "d3e9d2f01d3291e87ea65298317f86b8"
-BOT_TOKEN = "8046672368:AAGPu_dvn9TmsWeRvfWUWQ3v0dg7hnGr15I"
-
+BOT_TOKEN = "8046672368:AAGx5yzAUwF-8voOqUu1xwBFuCBGa5-iCPc"
 OWNER_ID = 7383046042
-DESTINATION_CHANNEL_ID = -1003395725940
+# ==================================================
 
-# =======================
-# BOT INIT
-# =======================
-app = Client(
-    "image_forward_bot",
+bot = Client(
+    "mybot",
     api_id=API_ID,
     api_hash=API_HASH,
-    bot_token=BOT_TOKEN
+    bot_token=BOT_TOKEN,
 )
 
-# =======================
-# ALBUM BUFFER
-# =======================
-album_buffer = {}
-album_timer = {}
+# /start command handler
+@bot.on_message(filters.command("start") & filters.private)
+async def start(client, message):
+    await message.reply_text("Bot is Alive✅")
 
-ALBUM_WAIT_TIME = 1.5  # seconds
-
-
-async def process_album(media_group_id):
-    await asyncio.sleep(ALBUM_WAIT_TIME)
-
-    messages = album_buffer.get(media_group_id)
-    if not messages:
-        return
-
-    media = []
-    for msg in messages:
-        if msg.photo:
-            media.append(InputMediaPhoto(media=msg.photo.file_id))
-
-    if media:
-        while True:
-            try:
-                await app.send_media_group(
-                    chat_id=DESTINATION_CHANNEL_ID,
-                    media=media
-                )
-                break
-            except FloodWait as e:
-                await asyncio.sleep(e.value)
-
-    album_buffer.pop(media_group_id, None)
-    album_timer.pop(media_group_id, None)
-
-
-# =======================
-# MESSAGE HANDLER
-# =======================
-@app.on_message(filters.private | filters.channel)
-async def handle_forwarded_media(client, message):
-
-    # 1️⃣ Owner check (PM or Channel Forward)
-    if message.from_user:
-        if message.from_user.id != OWNER_ID:
-            return
-    else:
-        # channel forwarded messages may not have from_user, skip if not from OWNER_ID
-        if not message.forward_from_chat:
-            return
-
-    # 2️⃣ Must be forwarded
-    if not message.forward_from_chat:
-        return
-
-    # =======================
-    # ALBUM HANDLING
-    # =======================
-    if message.media_group_id:
-        mgid = message.media_group_id
-
-        if mgid not in album_buffer:
-            album_buffer[mgid] = []
-
-        album_buffer[mgid].append(message)
-
-        if mgid not in album_timer:
-            album_timer[mgid] = asyncio.create_task(process_album(mgid))
-
-        return
-
-    # =======================
-    # SINGLE IMAGE
-    # =======================
-    if message.photo:
-        while True:
-            try:
-                await client.send_photo(
-                    chat_id=DESTINATION_CHANNEL_ID,
-                    photo=message.photo.file_id
-                )
-                break
-            except FloodWait as e:
-                await asyncio.sleep(e.value)
-
-
-# =======================
-# /start COMMAND
-# =======================
-@app.on_message(filters.private & filters.command("start"))
-async def start_command(client, message):
-    if message.from_user.id == OWNER_ID:
-        await message.reply_text("Bot is Alive ✅")
-
-
-# =======================
-# DUMMY HTTP SERVER (Render Web Service PORT)
-# =======================
-PORT = 8080
-
-class Handler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"Bot is running")
-
-def run_server():
-    server = HTTPServer(("0.0.0.0", PORT), Handler)
-    print(f"Listening on port {PORT} for Render health check...")
-    server.serve_forever()
-
-# Run server in background thread
-threading.Thread(target=run_server, daemon=True).start()
-
-
-# =======================
-# RUN BOT
-# =======================
-print("Bot started successfully...")
-app.run()
+# Run the bot
+bot.run()
