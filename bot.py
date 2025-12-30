@@ -1,5 +1,7 @@
 # file: bot.py
 from pyrogram import Client, filters
+from flask import Flask
+from threading import Thread
 
 # ===================== CONFIG =====================
 API_ID = 22134923
@@ -20,5 +22,19 @@ bot = Client(
 async def start(client, message):
     await message.reply_text("Bot is Alive✅")
 
-# Run the bot
-bot.run()
+# Flask server for Render Web Service
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Bot is running!"
+
+# Run bot in a separate thread
+def run_bot():
+    bot.run()
+
+Thread(target=run_bot).start()
+
+# Run Flask server
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
