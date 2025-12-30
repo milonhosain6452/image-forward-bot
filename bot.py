@@ -3,6 +3,8 @@ from pyrogram.errors import FloodWait
 from pyrogram.types import InputMediaPhoto
 import asyncio
 import time
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # =======================
 # CONFIG (HARDCODED)
@@ -103,6 +105,35 @@ async def handle_forwarded_media(client, message):
                 break
             except FloodWait as e:
                 await asyncio.sleep(e.value)
+
+
+# =======================
+# /start COMMAND
+# =======================
+@app.on_message(filters.private & filters.command("start"))
+async def start_command(client, message):
+    if message.from_user.id == OWNER_ID:
+        await message.reply_text("Bot is Alive ✅")
+
+
+# =======================
+# DUMMY HTTP SERVER (Render Web Service PORT)
+# =======================
+PORT = 8080
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is running")
+
+def run_server():
+    server = HTTPServer(("0.0.0.0", PORT), Handler)
+    print(f"Listening on port {PORT} for Render health check...")
+    server.serve_forever()
+
+# Run server in background thread
+threading.Thread(target=run_server, daemon=True).start()
 
 
 # =======================
