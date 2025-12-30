@@ -65,12 +65,17 @@ async def process_album(media_group_id):
 # =======================
 # MESSAGE HANDLER
 # =======================
-@app.on_message(filters.private)
+@app.on_message(filters.private | filters.channel)
 async def handle_forwarded_media(client, message):
 
-    # 1️⃣ Owner check
-    if not message.from_user or message.from_user.id != OWNER_ID:
-        return
+    # 1️⃣ Owner check (PM or Channel Forward)
+    if message.from_user:
+        if message.from_user.id != OWNER_ID:
+            return
+    else:
+        # channel forwarded messages may not have from_user, skip if not from OWNER_ID
+        if not message.forward_from_chat:
+            return
 
     # 2️⃣ Must be forwarded
     if not message.forward_from_chat:
