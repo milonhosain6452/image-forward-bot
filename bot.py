@@ -10,6 +10,7 @@ BOT_TOKEN = "8046672368:AAEN5l_oCsp4NwVnAsVKj2RanigmtIT2l6s"
 OWNER_ID = 7383046042
 # ==================================================
 
+# Pyrogram client
 bot = Client(
     "mybot",
     api_id=API_ID,
@@ -20,16 +21,16 @@ bot = Client(
 # /start command handler
 @bot.on_message(filters.command("start") & filters.private)
 async def start(client, message):
-    await message.reply_text("Bot is Alive✅")
+    await message.reply_text("Forward your post✅")
 
-# Flask server for Render Web Service
+# Flask app for Render Web Service
 app = Flask(__name__)
 
 @app.route("/")
 def home():
     return "Bot is running!"
 
-# Run bot in a separate thread
+# Run bot in background thread
 def run_bot():
     bot.run()
 
